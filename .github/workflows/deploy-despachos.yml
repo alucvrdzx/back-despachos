@@ -1,0 +1,32 @@
+name: Deploy Despachos Backend
+
+on:
+  push:
+    branches: [deploy]
+
+jobs:
+  deploy-despachos:
+    runs-on: ubuntu-latest
+    env:
+      AWS_REGION: us-east-1
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-session-token: ${{ secrets.AWS_SESSION_TOKEN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Deploy despachos backend via SSM
+        run: |
+          aws ssm send-command \
+            --instance-ids i-09e5f983fe1c13e0d \
+            --document-name AWS-RunShellScript \
+            --comment "Deploy despachos backend" \
+            --parameters commands=["cd /home/ec2-user/back-Despachos_SpringBoot","docker login -u ${{ secrets.DOCKERHUB_USERNAME }} -p ${{ secrets.DOCKERHUB_TOKEN }}","docker pull juanvillagra/back-despachos:latest","docker stop back-despachos || true","docker rm back-despachos || true","docker run -d --name back-despachos -p 8081:8081 --restart always juanvillagra/back-despachos:latest"] \
+            --timeout-seconds 600

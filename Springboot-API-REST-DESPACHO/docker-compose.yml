@@ -1,0 +1,39 @@
+version: '3.8'
+
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: root123
+      MYSQL_DATABASE: despachos_db
+      MYSQL_USER: root
+      MYSQL_PASSWORD: root123
+    volumes:
+      - mysql_data:/var/lib/mysql
+    command: ["--default-authentication-plugin=mysql_native_password", "--bind-address=0.0.0.0"]
+
+  despachos:
+    image: juanvillagra/back-despachos:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    ports:
+      - "8081:8081"
+    env_file:
+      - .env
+    environment:
+      DB_ENDPOINT: mysql
+      DB_PORT: 3306
+      DB_NAME: despachos_db
+      DB_USERNAME: root
+      DB_PASSWORD: root123
+
+volumes:
+  mysql_data:
+    name: mysql_data
